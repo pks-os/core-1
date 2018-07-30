@@ -977,34 +977,40 @@ public class ContentResource {
                     }
                 }
             }
-
-            // running a workflow action?
-            for (WorkflowAction action : APILocator.getWorkflowAPI()
-                    .findAvailableActions(contentlet, init.getUser())) {
-                if (init.getParamsMap().containsKey(action.getName().toLowerCase())) {
-
-                    contentlet.setActionId(action.getId());
-
-                    if (action.isCommentable()) {
-                        String comment = init.getParamsMap()
-                                .get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
-                        if (UtilMethods.isSet(comment)) {
-                            contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, comment);
-                        }
+            
+            String actionId = init.getParamsMap().get(Contentlet.WORKFLOW_ACTION_KEY.toLowerCase());
+            if(actionId == null) {
+                for (WorkflowAction actionName : APILocator.getWorkflowAPI().findAvailableActions(contentlet, init.getUser())) {
+                    if (init.getParamsMap().containsKey(actionName.getName().toLowerCase())) {
+                        actionId= actionName.getId() ;
+                        break;
                     }
-
-                    if (action.isAssignable()) {
-                        String assignTo = init.getParamsMap()
-                                .get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
-                        if (UtilMethods.isSet(assignTo)) {
-                            contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, assignTo);
-                        }
-                    }
-
-                    live = false; // avoid manually publishing
-                    break;
                 }
             }
+
+            if(actionId !=null) {
+                WorkflowAction action= APILocator.getWorkflowAPI().findAction(actionId, init.getUser()) ;
+                contentlet.setActionId(action.getId());
+                live = false; // avoid manually publishing
+                if (action.isCommentable()) {
+                    String comment = init.getParamsMap()
+                            .get(Contentlet.WORKFLOW_COMMENTS_KEY.toLowerCase());
+                    if (UtilMethods.isSet(comment)) {
+                        contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, comment);
+                    }
+                }
+    
+                if (action.isAssignable()) {
+                    String assignTo = init.getParamsMap()
+                            .get(Contentlet.WORKFLOW_ASSIGN_KEY.toLowerCase());
+                    if (UtilMethods.isSet(assignTo)) {
+                        contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, assignTo);
+                    }
+                }
+            }
+            
+            
+            
 
             Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
                     .get(RELATIONSHIP_KEY);
